@@ -1,6 +1,6 @@
 # AssistIQ: AI Customer-Support Agent (SpotifyCares)
 
-AssistIQ is an intelligent customer-support agent built for the Hiver SDE Intern take-home assignment, trained on the **Customer Support on Twitter** dataset specifically for **@SpotifyCares**.
+AssistIQ is an intelligent customer-support agent, trained on the **Customer Support on Twitter** dataset specifically for **@SpotifyCares**.
 
 ---
 
