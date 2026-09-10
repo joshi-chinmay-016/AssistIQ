@@ -1,0 +1,7 @@
+dataset/twcs/
+dataset/spotify_tweets.csv
+
+.venv
+.venv/*
+.antigravity/*
+powershell.cmd
