@@ -1,0 +1,51 @@
+tweet_id,text,true_intent,predicted_intent,max_class_probability
+1677487,@SpotifyCares Sure,other_non_actionable,other_non_actionable,0.212
+376122,"@SpotifyCares Hi, i paid for my premium account but it still free, i paid yesterday at Oxxo",billing_and_payment,billing_and_payment,0.1621
+1948049,@SpotifyCares if i have a unidays account can i still receive the premium discount after the 12 month period?,premium_and_subscription,premium_and_subscription,0.143
+2458973,@SpotifyCares I just registered for your service yesterday and today I noticed the email on the account was not my email and I had to log in by username. Is this normal?,account_and_login,account_and_login,0.1585
+798531,"@SpotifyCares I have spotify on my mobile, ipad, and desktop. Why do I need to log out if I am the only one using these devices? I have done it before 1/2",account_and_login,billing_and_payment,0.1203
+55237,"@115888 why did you take away the full date in the album info?  You added it in there, and now you're taking it away! I need that date!",content_metadata,feature_requests,0.1403
+776162,"@SpotifyCares Used CDBaby to distribute with you.They say it's been delivered to you, but it's not up on our artist page yet. Any ideas? Release date 2day",music_availability,other_non_actionable,0.1183
+1981078,"I want my @115888 account to have a profile picture, but can’t-cause I don’t have a Facebook. Boo.",feature_requests,account_and_login,0.1765
+1989806,@115888 Please bring Spotify to India. I need a good streaming platform and a good platform to upload my music too. Please. ❤️,feature_requests,feature_requests,0.1194
+319860,"@SpotifyCares I replied to the DM and then didn't get a reply again, tried Spotify again and got the same issue going on, are you going to help?",playback_and_app_issues,premium_and_subscription,0.1325
+1933316,this song isnt on spotify and nobody will give me a straight answer as to why https://t.co/IH5k93Lkmy,music_availability,playback_and_app_issues,0.1402
+2144256,@SpotifyCares i just activated a voucher a it didnt give me premium,premium_and_subscription,premium_and_subscription,0.1457
+1309665,@SpotifyCares I was just looking more carefully.  I bet 90% of my saved songs are gone.   Damn it so frustrating.,playlist_and_library,playback_and_app_issues,0.1258
+2913779,"So @115888 is down, and there's nothing to keep me sane for the rest of the work day #NoMusicNoLife",playback_and_app_issues,feature_requests,0.1344
+2201071,@SpotifyCares I already tried that one but I still can't pay even though I have enough load to pay for the subscription 😕 It always says tht something went wrong; it's already been 3 days https://t.co/qxn01H2ucj,billing_and_payment,premium_and_subscription,0.1429
+1350243,"@115888, I would really like to see 2 Factor Authentication brought to all platforms. No reason not to have it in this day and age.",feature_requests,feature_requests,0.144
+2018958,@SpotifyCares Why have my downloaded music keep on disappearing from my phone? happened multiple time. premium + latest ios,playlist_and_library,playlist_and_library,0.1826
+1848989,@SpotifyCares On an iPhone 6s,other_non_actionable,other_non_actionable,0.1634
+773112,@118266 pembayaran premium pelajar cuma bisa kartu kredit atau nanti bisa via lain?,premium_and_subscription,other_non_actionable,0.1195
+2457285,Thanks @SpotifyCares for the quick response. I am very impressed and satisfied. Keep it up!,other_non_actionable,other_non_actionable,0.1356
+586361,@115888 you need to bring back RBD’S albums fr ☹️,music_availability,feature_requests,0.1397
+141198,"@SpotifyCares It's a bad confirmation. So I cannot share Spotify with my HiFi because of.. what? Was a service, now not. Tell me how from Iphone I can share spotify music.",playback_and_app_issues,playback_and_app_issues,0.1796
+772043,@SpotifyCares Did spotify crash? Hasn't worked all day.,playback_and_app_issues,billing_and_payment,0.1494
+318693,@SpotifyCares Hi! It has been rectified! Very impressed with the support team! Thank you,other_non_actionable,other_non_actionable,0.1641
+328661,@SpotifyCares Low power mode is working for now. Will do a complete device reset after I can it up and reach back out.,other_non_actionable,playback_and_app_issues,0.1421
+1520000,@SpotifyCares Well it stopped after I tweeted you...🤔🤔🤔,playback_and_app_issues,other_non_actionable,0.1806
+2045157,@115888 @SpotifyCares what about the starvation of ideas and enhancement suggestions from years ago?,feature_requests,content_metadata,0.1628
+2041036,"@SpotifyCares When you listen to songs on radio such as a song radio, does it count toward getting a new daily mix?",search_and_discovery,playback_and_app_issues,0.1654
+727417,@SpotifyCares I know that Microsoft and Spotify are good partners. Thanks!,other_non_actionable,other_non_actionable,0.1851
+845907,"@SpotifyCares Jon Foreman’s listing is missing his Wonderland’s albums. If you search them, they are there.",content_metadata,other_non_actionable,0.1157
+93911,@115888 Mentioned at first 9 pesos then after a while became 128 pesos then I tried to load my phone 130 pesos then suddenly contact customer service.,billing_and_payment,premium_and_subscription,0.1312
+1896966,@SpotifyCares URGENT answer my DM,other_non_actionable,other_non_actionable,0.2057
+832551,@SpotifyCares  https://t.co/7j2qZuAWDW,other_non_actionable,other_non_actionable,0.2652
+1476571,@SpotifyCares I was taken off of spotify student but never sent an email. Plus I can't access hulu.,premium_and_subscription,account_and_login,0.1367
+588859,@SpotifyCares @259179 Will there be a fix that automatically cleans up the mess you caused? I am not willing to make any changes manually. It's your task to release a fix.,playlist_and_library,feature_requests,0.1465
+2312895,"I wish @115888 didn’t skip/scratch/loop with every song I played on the new IOS Beta... minor glitches just annoying, trying to jam out!",playback_and_app_issues,premium_and_subscription,0.1462
+1935995,@SpotifyCares it happened again and i feel like i paid attention to all the steps,playback_and_app_issues,playback_and_app_issues,0.128
+1022726,@118266 please take a look @SpotifyCares https://t.co/pqL10MyQIe,other_non_actionable,other_non_actionable,0.2244
+2427700,"@SpotifyCares Thanks, that would be great! Love your music and would love to listen to the books in the car. Keep up the good work! 👍🏻",feature_requests,feature_requests,0.2052
+964110,@115888 is it down? It keeps saying service not available on my desktop #help,playback_and_app_issues,music_availability,0.2476
+367630,"@SpotifyCares hey, have just sent you a DM re payment",billing_and_payment,other_non_actionable,0.1937
+2921966,@SpotifyCares Thanks Spotify. As if I ever doubted you for a moment!,other_non_actionable,other_non_actionable,0.2235
+1481446,FIX IT FIX IT @115888  😭😭💔💔 https://t.co/uhUG18a5y1,other_non_actionable,playback_and_app_issues,0.1519
+2818835,@SpotifyCares I’m trying to make an account for over an hour now I even made a new email and I always get this https://t.co/e0o4pT6VX2,account_and_login,account_and_login,0.1354
+1666481,"@SpotifyCares I bought a 6 month voucher in June as gift I’d like to renew/ extend the gift subscription- can’t work out how, pls help!!",premium_and_subscription,premium_and_subscription,0.1303
+2912468,@SpotifyCares account was hacked and resolved but all my playlists are gone.,account_and_login,playlist_and_library,0.244
+2586490,@SpotifyCares Our label has already emailed about this problem last week and hasn't gotten a response,other_non_actionable,playlist_and_library,0.1535
+1724998,"@SpotifyCares Am an exchange student in New Zealand but come from Denmark, so can't but premium here because the credit card is Danish. Help",billing_and_payment,billing_and_payment,0.1724
+816277,"Highly considering going back to @115888 but I have some beef to sort out with them, first. :/",other_non_actionable,premium_and_subscription,0.1227
+544566,@115888 @117168 @SpotifyCares @117153 can we get an update with a sleep timer function? Where we can set it so music will stop playing and not run all night???,feature_requests,premium_and_subscription,0.1379

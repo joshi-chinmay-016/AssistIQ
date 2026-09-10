@@ -1,0 +1,4 @@
+model,accuracy,macro_f1,weighted_f1
+majority_baseline,0.26,0.0413,0.1073
+tfidf_logistic_regression,0.44,0.3101,0.4187
+proposed_model,0.46,0.4004,0.4534
