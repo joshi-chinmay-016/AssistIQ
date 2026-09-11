@@ -737,3 +737,189 @@ Simulating the trade-off between intent confidence ($0.15 - 0.30$) and retrieval
    ```
    *Runs all 37 automated tests across Phase 1, Phase 2, Phase 3, and Phase 4 in ~15 seconds.*
 
+---
+
+## Phase 5 — FastAPI Backend
+
+### 1. Objective & Architecture
+Phase 5 exposes the complete AssistIQ 4-phase pipeline over a **high-performance, production-grade FastAPI HTTP REST API**. This layer acts as the integration gateway for Phase 6's Next.js web application.
+
+```
+Next.js Frontend (Phase 6)
+          │ HTTP JSON (POST /api/v1/assist)
+          ▼
+FastAPI API Gateway (backend/api/main.py)
+   ├── CORS Middleware (Configurable Origins)
+   ├── Pydantic Input Validation (AssistRequest)
+   ├── Safe Exception Handling (Zero Secret/Path Leakage)
+   └── Dependency Injection (Config & Pipeline Runner)
+          │
+          ▼
+assist_customer(...) Local Inference Orchestrator
+          │
+┌────────────────────────────────────────────────────────┐
+│ Phase 1: Intent Classification (LinearSVC + Margin)   │
+│ Phase 2: Dense Semantic Retrieval (FAISS 40k Cases)    │
+│ Phase 3: Grounded Generation (Gemini 2.5 Flash / Mock) │
+│ Phase 4: Deterministic Policy (Rules E0-E8, A1)        │
+└────────────────────────────────────────────────────────┘
+          │
+          ▼
+Structured Pydantic Contract (AssistResponse)
+(message, intent, reply, decision, evidence, latency)
+```
+
+> [!IMPORTANT]
+> **No Pipeline Duplication**: FastAPI is purely an interface and orchestration gateway.
+> All business, ML, retrieval, generation, and escalation logic remains cleanly encapsulated under `backend/src/`.
+> The API calls `assist_customer(...)` directly, mapping internal dictionaries to stable, versioned API response contracts.
+
+---
+
+### 2. Available Endpoints
+
+| Method | Path | Summary | Description | Response Model |
+| :---: | :--- | :--- | :--- | :---: |
+| `GET` | `/health` | Health Check | Ultra-fast liveness check (< 5ms, zero ML/LLM overhead) | `HealthResponse` |
+| `GET` | `/` | Root Information | Service metadata, brand (`SpotifyCares`), and docs link | `RootInfoResponse` |
+| `POST` | `/api/v1/assist` | Customer Assist | Runs full 4-phase pipeline on incoming customer query | `AssistResponse` |
+| `GET` | `/docs` | Interactive Docs | Auto-generated Swagger UI for visual API testing | HTML |
+| `GET` | `/openapi.json` | OpenAPI Schema | Machine-readable API specification | JSON |
+
+---
+
+### 3. Request & Response Specifications
+
+#### Request: `POST /api/v1/assist`
+```json
+{
+  "message": "I was charged twice for Spotify Premium this month. Can I get a refund?",
+  "top_k": 5
+}
+```
+
+**Input Validation Rules**:
+- Automatically strips leading and trailing whitespace.
+- Empty or whitespace-only messages return `HTTP 422 Unprocessable Content`.
+- Messages exceeding 2,000 characters return `HTTP 422 Unprocessable Content`.
+- Non-string payloads return `HTTP 422 Unprocessable Content`.
+
+#### Response: `HTTP 200 OK`
+```json
+{
+  "message": "I was charged twice for Spotify Premium this month. Can I get a refund?",
+  "intent": {
+    "name": "billing_and_payment",
+    "confidence": 0.1803
+  },
+  "reply": {
+    "text": "Hey there! We'd be glad to look into this billing discrepancy for you. Could you please send us a quick DM with your account email address?",
+    "grounding_status": "grounded",
+    "grounding_summary": "Grounded in historical case case_16893.",
+    "evidence_case_ids": ["case_16893"]
+  },
+  "decision": {
+    "decision": "escalate",
+    "risk_level": "high",
+    "reason": "Escalated because financial transactions, refund requests, or disputed charges ('refund') require authorized human account investigation.",
+    "primary_rule": "E6",
+    "policy_rules_triggered": ["E1", "E6"]
+  },
+  "evidence": [
+    {
+      "case_id": "case_16893",
+      "similarity": 0.8968,
+      "customer_text": "I got charged twice for my Spotify family plan this month.",
+      "support_text": "Hi! Can you send us a DM with your account email so we can investigate this charge?",
+      "rank": 1,
+      "conversation_id": 284102
+    }
+  ],
+  "latency": {
+    "intent_ms": 2.06,
+    "retrieval_ms": 23.96,
+    "generation_ms": 1191.77,
+    "escalation_ms": 0.44,
+    "total_ms": 1218.23
+  }
+}
+```
+
+---
+
+### 4. Security & Error Handling
+
+1. **Zero Secret & Path Exposure**:
+   - Generic 500 error handler catches unexpected internal exceptions and returns `{"error": "Internal Server Error", "detail": "..."}`.
+   - Internal stack traces, API keys, filesystem paths, and database details are logged server-side only and never sent to the client.
+2. **Upstream LLM Outage Resilience**:
+   - Network or quota failures from Gemini trigger Phase 3's safe fallback (`grounding_status="generation_failed"`), causing Phase 4 to escalate safely (`rule E3`). The API returns a valid HTTP 200 with escalation instructions rather than crashing with an unhandled 500.
+3. **CORS Defense**:
+   - Wildcard `"*"` is disallowed by default.
+   - Configurable allowed origins via `ASSISTIQ_CORS_ORIGINS` (defaults to `http://localhost:3000,http://127.0.0.1:3000` for Next.js development).
+
+---
+
+### 5. Performance & Caching Characteristics
+
+| Request Type | First Invocation (Cold) | Subsequent Invocations (Warm) | Notes |
+| :--- | :---: | :---: | :--- |
+| `GET /health` | ~200 ms (TCP handshake) | **< 5 ms** | Ultra-lightweight, zero ML overhead |
+| `POST /api/v1/assist` (Mock LLM) | ~12.5 s (model + FAISS load) | **~30 ms** | Ideal for offline unit testing & CI |
+| `POST /api/v1/assist` (Live Gemini 2.5 Flash) | ~14.0 s (model + FAISS load) | **~1.2 - 1.4 s** | Dominated by upstream Gemini inference |
+
+- **Singleton Model Lifecycle**: Intent classifier (`LinearSVC`) and FAISS index (`IndexFlatIP` on 40,794 cases) load into RAM once on initial inference and remain cached across subsequent HTTP requests.
+
+---
+
+### 6. Environment Configuration
+
+Add the following variables to `backend/.env` (or copy from `backend/.env.example`):
+
+```bash
+# API Server Configuration (Phase 5)
+ASSISTIQ_API_HOST=0.0.0.0
+ASSISTIQ_API_PORT=8000
+ASSISTIQ_CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+
+# LLM Configuration (Phase 3)
+GEMINI_API_KEY=your_gemini_api_key_here
+ASSISTIQ_LLM_MODEL=gemini-2.5-flash
+ASSISTIQ_LLM_PROVIDER=gemini
+```
+
+---
+
+### 7. How to Run & Test Phase 5
+
+1. **Start FastAPI Server Locally**:
+   ```bash
+   uvicorn backend.api.main:app --host 127.0.0.1 --port 8000 --reload
+   ```
+   *The server starts in < 2 seconds at `http://127.0.0.1:8000`.*
+
+2. **Access Swagger Documentation**:
+   Open in browser:
+   ```
+   http://127.0.0.1:8000/docs
+   ```
+
+3. **Send an API Request via cURL / PowerShell**:
+   ```bash
+   curl -X POST http://127.0.0.1:8000/api/v1/assist \
+     -H "Content-Type: application/json" \
+     -d '{"message": "I was charged twice for Spotify Premium this month. Can I get a refund?"}'
+   ```
+
+4. **Run API Unit & Integration Tests**:
+   ```bash
+   python -m unittest tests/test_api.py
+   ```
+   *Runs 11 automated tests covering health check, root info, validation errors, 500 error sanitization, CORS headers, and contract validation.*
+
+5. **Run Full Repository Test Suite (Phases 1–5)**:
+   ```bash
+   python -m unittest discover tests
+   ```
+   *Runs all 48 tests across Phases 1, 2, 3, 4, and 5 in ~14 seconds.*
+
