@@ -7,3 +7,11 @@ dataset/spotify_tweets.csv
 powershell.cmd
 backend/src/retrieval/artifacts/
 *.faiss
+
+# Environment variables & secrets (CRITICAL: NEVER COMMIT)
+.env
+*.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
