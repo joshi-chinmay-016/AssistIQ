@@ -7,6 +7,7 @@ and assist_customer() for the complete Phase 1 -> Phase 2 -> Phase 3 pipeline.
 import time
 import logging
 from typing import List, Dict, Any, Optional
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,8 @@ from backend.src.generation.llm import SupportReply, BaseLLMClient, get_llm_clie
 from backend.src.retrieval.retrieve import get_retriever
 from backend.src.intent.data import load_and_split_data, find_dataset_path
 from backend.src.intent.models import build_proposed_model
+from backend.src.escalation.models import EscalationDecision, EscalationPolicyConfig
+from backend.src.escalation.policy import decide_escalation
 
 # Global singleton cache for models
 _GLOBAL_CLASSIFIER = None
@@ -129,18 +132,25 @@ def assist_customer(
     customer_message: str,
     top_k: int = 5,
     config: Optional[GenerationConfig] = None,
-    llm_client: Optional[BaseLLMClient] = None
+    llm_client: Optional[BaseLLMClient] = None,
+    escalation_config: Optional[EscalationPolicyConfig] = None
 ) -> Dict[str, Any]:
     """
     End-to-End local inference pipeline executing:
-    Customer message -> Phase 1 Intent -> Phase 2 Retrieval -> Phase 3 LLM Generation.
+    Customer message -> Phase 1 Intent -> Phase 2 Retrieval -> Phase 3 LLM Generation -> Phase 4 Escalation Policy.
     """
     t_start = time.perf_counter()
 
-    # Step 1: Phase 1 Intent Classification
+    # Step 1: Phase 1 Intent Classification & Confidence Estimation
     t_intent_start = time.perf_counter()
     classifier = get_cached_classifier()
     predicted_intent = str(classifier.predict([customer_message])[0])
+    try:
+        decision_scores = classifier.decision_function([customer_message])[0]
+        exp_scores = np.exp(decision_scores - np.max(decision_scores))
+        intent_confidence = float(np.max(exp_scores / exp_scores.sum()))
+    except Exception:
+        intent_confidence = 0.50
     intent_ms = (time.perf_counter() - t_intent_start) * 1000.0
 
     # Step 2: Phase 2 Historical Support Retrieval
@@ -159,27 +169,54 @@ def assist_customer(
         llm_client=llm_client
     )
     gen_ms = (time.perf_counter() - t_gen_start) * 1000.0
+
+    # Step 4: Phase 4 Deterministic Escalation Policy
+    t_esc_start = time.perf_counter()
+    valid_cases = [c for c in retrieved_cases if isinstance(c, dict) and "case_id" in c]
+    top_sim = max([float(c.get("similarity", 0.0)) for c in valid_cases], default=0.0)
+    evidence_count = len(valid_cases)
+
+    escalation_decision = decide_escalation(
+        customer_message=customer_message,
+        predicted_intent=predicted_intent,
+        intent_confidence=intent_confidence,
+        top_retrieval_similarity=top_sim,
+        evidence_count=evidence_count,
+        grounding_status=support_reply.grounding_status,
+        reply_text=support_reply.reply,
+        config=escalation_config
+    )
+    esc_ms = (time.perf_counter() - t_esc_start) * 1000.0
     total_ms = (time.perf_counter() - t_start) * 1000.0
 
     return {
         "customer_message": customer_message,
         "predicted_intent": predicted_intent,
+        "intent_confidence": round(intent_confidence, 4),
         "retrieved_cases": retrieved_cases,
         "support_reply": support_reply,
         "reply": support_reply.reply,
         "grounding_summary": support_reply.grounding_summary,
         "evidence_case_ids": support_reply.evidence_case_ids,
         "grounding_status": support_reply.grounding_status,
+        "escalation_decision": escalation_decision,
+        "decision": escalation_decision.decision,
+        "risk_level": escalation_decision.risk_level,
+        "escalation_reason": escalation_decision.reason,
+        "primary_rule": escalation_decision.primary_rule,
+        "policy_rules_triggered": escalation_decision.policy_rules_triggered,
         "latency": {
             "intent_ms": round(intent_ms, 2),
             "retrieval_ms": round(retrieval_ms, 2),
             "generation_ms": round(gen_ms, 2),
+            "escalation_ms": round(esc_ms, 2),
             "total_ms": round(total_ms, 2)
         },
         "latency_ms": {
             "intent_ms": round(intent_ms, 2),
             "retrieval_ms": round(retrieval_ms, 2),
             "generation_ms": round(gen_ms, 2),
+            "escalation_ms": round(esc_ms, 2),
             "total_ms": round(total_ms, 2)
         }
     }
@@ -191,7 +228,7 @@ def main():
     Run via: python -m backend.src.generation.generate
     """
     print("==================================================================")
-    print("ASSISTIQ END-TO-END ASSISTANT DEMO (PHASES 1 -> 2 -> 3)")
+    print("ASSISTIQ END-TO-END ASSISTANT DEMO (PHASES 1 -> 2 -> 3 -> 4)")
     print("==================================================================")
 
     config = GenerationConfig.from_env()
@@ -204,20 +241,23 @@ def main():
     test_queries = [
         "I was charged twice for Spotify Premium this month. Can I get a refund?",
         "Music keeps pausing on my iPhone whenever the screen turns off",
-        "How do I recover my hacked Spotify account and reset my password?"
+        "How do I recover my hacked Spotify account and reset my password?",
+        "Hello Spotify team, good morning!"
     ]
 
     for q in test_queries:
         print(f"\n------------------------------------------------------------------")
         print(f"CUSTOMER: '{q}'")
         res = assist_customer(q, top_k=3, config=config)
-        print(f"• PREDICTED INTENT:    {res['predicted_intent']}")
+        print(f"• PREDICTED INTENT:    {res['predicted_intent']} (Conf: {res['intent_confidence']:.4f})")
         print(f"• TOP HISTORICAL CASE: {res['retrieved_cases'][0]['case_id']} (Sim: {res['retrieved_cases'][0]['similarity']:.4f})")
         print(f"• GROUNDING STATUS:    {res['grounding_status']}")
         print(f"• CITED EVIDENCE:      {res['evidence_case_ids']}")
         print(f"• DRAFTED REPLY:\n\"{res['reply']}\"")
-        print(f"• INTERNAL SUMMARY:    {res['grounding_summary']}")
-        print(f"• LATENCY:             Total: {res['latency']['total_ms']:.1f}ms (Intent: {res['latency']['intent_ms']:.1f}ms, Retrieval: {res['latency']['retrieval_ms']:.1f}ms, LLM: {res['latency']['generation_ms']:.1f}ms)")
+        print(f"• ESCALATION DECISION: [{res['decision'].upper()}] (Risk: {res['risk_level']})")
+        print(f"• PRIMARY RULE:        {res['primary_rule']} (Triggered: {res['policy_rules_triggered']})")
+        print(f"• REASON:              {res['escalation_reason']}")
+        print(f"• LATENCY:             Total: {res['latency']['total_ms']:.1f}ms (Intent: {res['latency']['intent_ms']:.1f}ms, Retrieval: {res['latency']['retrieval_ms']:.1f}ms, LLM: {res['latency']['generation_ms']:.1f}ms, Policy: {res['latency']['escalation_ms']:.1f}ms)")
 
     print("==================================================================")
 

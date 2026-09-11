@@ -532,3 +532,208 @@ Stored in `evaluation/results/reply_examples.csv`:
 4. **Interactive Demonstration Notebook**:
    Open and execute `notebooks/04_llm_reply_generation.ipynb`.
 
+---
+
+## Phase 4 — Auto-handle vs Escalate Policy
+
+### 1. Objective & Core Design Principle
+The objective of Phase 4 is to implement a **transparent, deterministic, explainable escalation policy** that decides whether each customer-support interaction should be:
+1. **`AUTO_HANDLE`**: Send the drafted AI response autonomously to the customer.
+2. **`ESCALATE`**: Route the customer query and context to a human support agent.
+
+> [!IMPORTANT]
+> **Core Architectural Principle**: Gemini **never** makes the final escalation decision.
+> The escalation decision is 100% deterministic, rule-based, explainable, and reproducible.
+> LLM generations are treated as candidate drafts; the policy layer validates signals across all four pipeline stages before permitting autonomous handling.
+> Safety strictly takes priority over automation rate: an unsafe auto-handle is far more harmful than an unnecessary escalation.
+
+---
+
+### 2. End-to-End Orchestrated Pipeline
+
+```
+Customer Message
+       │
+       ▼
+Phase 1: Intent Classification (LinearSVC + Confidence/Margin)
+       │
+       ▼
+Phase 2: Historical Support Retrieval (FAISS Dense Semantic Search)
+       │
+       ▼
+Phase 3: Grounded LLM Reply Generation (Gemini 2.5 Flash / MockLLM)
+       │
+       ▼
+Phase 4: Deterministic Escalation Policy  ◄─── POLICY LAYER
+       │
+       ├──────────────────────────┐
+       ▼                          ▼
+  AUTO_HANDLE                  ESCALATE
+ (Safe, confident,       (Ambiguous, low-evidence,
+    grounded)              sensitive, or high-risk)
+```
+
+---
+
+### 3. Decision Matrix & Policy Rules
+
+The policy evaluates rules in an **explicit, deterministic priority order**. When multiple rules trigger, the highest-priority rule determines the decision and risk level, while all matching rules are recorded in `policy_rules_triggered` for auditability.
+
+| Priority | Rule ID | Category / Trigger | Decision | Risk Level | Human-Readable Reason Rationale |
+| :---: | :---: | :--- | :---: | :---: | :--- |
+| **1** | `E0` | **Empty / Invalid Input**<br>(whitespace or < 2 characters) | `ESCALATE` | `high` | Customer query is empty, whitespace, or invalid. |
+| **2** | `E3` | **Generation Failure**<br>(`grounding_status == "generation_failed"` or empty reply) | `ESCALATE` | `high` | Response generation failed or could not produce a valid reply. |
+| **3** | `E4` | **Insufficient Grounding**<br>(`grounding_status == "insufficient_evidence"`) | `ESCALATE` | `medium` | Response lacks sufficient grounding in retrieved historical cases. |
+| **4** | `E2` | **Weak Retrieval Evidence**<br>(`top_sim < 0.45` or `evidence_count < 1`) | `ESCALATE` | `medium` | Historical evidence is insufficient: top retrieval similarity is below threshold. |
+| **5** | `E1` | **Low Intent Confidence**<br>(`confidence < 0.20` softmax prob) | `ESCALATE` | `medium` | Intent confidence is below configured threshold; cannot reliably determine issue. |
+| **6** | `E5` | **Sensitive Account Security**<br>(`account_and_login` + password/hack/stolen/lockout keywords) | `ESCALATE` | `high` | Sensitive account or security credentials issue requires secure human verification. |
+| **7** | `E6` | **Transactional Billing Action**<br>(`billing_and_payment` + refund/dispute/double-charge keywords) | `ESCALATE` | `high` | Financial transactions, refund requests, or disputed charges require human authorization. |
+| **8** | `E7` | **Ambiguous / Non-Actionable**<br>(`other_non_actionable` without greeting patterns) | `ESCALATE` | `medium` | Request is ambiguous, non-actionable, or lacks sufficient troubleshooting details. |
+| **—** | `E7_GREETING` | **Polite Greeting / Thanks**<br>(`other_non_actionable` + polite greeting/thanks tokens) | `AUTO_HANDLE` | `low` | Polite greeting or acknowledgment that does not require customer support intervention. |
+| **—** | `E8` | **Straightforward Feature Suggestion**<br>(`feature_requests` + grounded reply) | `AUTO_HANDLE` | `low` | Customer submitting straightforward feature suggestion received grounded acknowledgment. |
+| **9** | `A1` | **Safe Grounded Auto-Handle**<br>(All safety checks pass + similarity $\ge 0.45$ + grounded) | `AUTO_HANDLE` | `low` | Intent confident, relevant historical cases retrieved, reply grounded in evidence. |
+
+---
+
+### 4. Configurable Thresholds (`EscalationPolicyConfig`)
+
+To prevent magic numbers and allow calibration based on empirical human reviews, policy thresholds are encapsulated in `EscalationPolicyConfig`:
+
+```python
+class EscalationPolicyConfig(BaseModel):
+    min_intent_confidence: float = 0.20      # Softmax prob over 11 classes (random baseline ~0.091)
+    min_retrieval_similarity: float = 0.45   # Minimum cosine similarity (aligns with Phase 3)
+    min_evidence_count: int = 1              # Minimum relevant cases required
+    strict_account_security: bool = True     # Escalate credential/account recovery requests
+    strict_billing_actions: bool = True      # Escalate refund/dispute/duplicate charge requests
+    auto_handle_greetings: bool = True       # Permit auto-handling polite greetings
+    auto_handle_feature_requests: bool = True# Permit auto-handling grounded feature suggestions
+```
+
+> [!NOTE]
+> These thresholds are initial policy baselines and are explicitly documented as such. Empirical threshold optimization is intentionally deferred until human review annotations are completed.
+
+---
+
+### 5. Structured Pydantic Output (`EscalationDecision`)
+
+Every execution returns a strongly validated Pydantic model:
+
+```json
+{
+  "decision": "escalate",
+  "risk_level": "high",
+  "reason": "Escalated because financial transactions, refund requests, or disputed charges ('refund') require authorized human account investigation.",
+  "intent": "billing_and_payment",
+  "intent_confidence": 0.3204,
+  "top_retrieval_similarity": 0.8968,
+  "evidence_count": 3,
+  "grounding_status": "grounded",
+  "primary_rule": "E6",
+  "policy_rules_triggered": ["E6"]
+}
+```
+
+---
+
+### 6. Evaluation Harness & Human Labeling
+
+#### Review Dataset (`evaluation/escalation_review.csv`)
+AssistIQ provides an evaluation harness that samples 40 representative customer queries from `golden_set.csv` across all 11 intents and generates `evaluation/escalation_review.csv` with columns:
+- `tweet_id`
+- `text`
+- `predicted_intent`
+- `intent_confidence`
+- `top_retrieval_similarity`
+- `grounding_status`
+- `predicted_decision`
+- `predicted_risk`
+- `predicted_reason`
+- `primary_rule`
+- `human_decision` *(left blank for manual review)*
+- `human_risk` *(left blank for manual review)*
+- `human_notes` *(left blank for manual review)*
+
+> [!IMPORTANT]
+> Zero fabricated human labels: all human evaluation columns are initialized empty to maintain strict scientific integrity.
+
+#### Human Labeling Guidelines (`evaluation/HUMAN_LABELING_GUIDELINES.txt`)
+Reviewers evaluate: *"Would it be safe for an AI support agent to send this response without human review?"*
+- **AUTO_HANDLE**: Clear intent, adequate historical evidence, grounded response, no account-specific action required, no unsupported promises.
+- **ESCALATE**: Ambiguity, weak evidence, sensitive account security, transactional financial actions, generation/grounding failure.
+
+#### Safety & Performance Metrics
+When human labels are populated, `compute_escalation_metrics()` computes:
+1. **Confusion Matrix** (TP, FP, FN, TN for class `ESCALATE`).
+2. **Precision, Recall, F1** for class `ESCALATE`.
+3. **Auto-Handle Rate** ($\frac{\text{pred auto\_handle}}{\text{total}}$).
+4. **Escalation Rate** ($\frac{\text{pred escalate}}{\text{total}}$).
+5. **Unsafe Auto-Handle Rate** ($\frac{\text{pred auto\_handle} \land \text{human escalate}}{\text{total}}$) — **The Key Safety Failure**.
+6. **Missed Auto-Handle Rate** ($\frac{\text{pred escalate} \land \text{human auto\_handle}}{\text{total}}$) — Unnecessary human workload.
+
+#### Baseline Policy Distribution (N=40 golden set sample)
+- **Auto-Handle Rate**: 60.0%
+- **Escalation Rate**: 40.0%
+- **Rules Triggered**: A1 (52.5%), E7 (25.0%), E1 (10.0%), E8 (7.5%), E5 (5.0%)
+
+#### Threshold Sensitivity Grid Simulation
+Simulating the trade-off between intent confidence ($0.15 - 0.30$) and retrieval similarity ($0.35 - 0.55$):
+
+| `min_intent_confidence` | Sim $\ge 0.35$ | Sim $\ge 0.40$ | Sim $\ge 0.45$ (Default) | Sim $\ge 0.50$ | Sim $\ge 0.55$ |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| **0.15** | 62.5% | 62.5% | 62.5% | 62.5% | 60.0% |
+| **0.20 (Default)** | 60.0% | 60.0% | **60.0%** | 60.0% | 57.5% |
+| **0.25** | 47.5% | 47.5% | 47.5% | 47.5% | 45.0% |
+| **0.30** | 32.5% | 32.5% | 32.5% | 32.5% | 30.0% |
+
+---
+
+### 7. Architectural Decision Log (Phase 4)
+
+1. **Deterministic Escalation vs. LLM-Controlled Decision**:
+   *Decision*: Escalation is 100% rule-based; Gemini generates draft replies but never decides whether to escalate.
+   *Rationale*: Ensures decisions are reproducible, explainable, testable, and free from non-deterministic hallucinations or prompt injection evasion.
+2. **Safety Takes Priority Over Automation Rate**:
+   *Decision*: If any signal is weak or conflicting, the system must escalate.
+   *Rationale*: An unsafe auto-handle on a billing/account-compromise ticket can cause direct customer harm and severe brand liability. Unnecessary escalation merely costs agent review time.
+3. **Historical Evidence is Mandatory for Auto-Handling**:
+   *Decision*: A case cannot be auto-handled without retrieved evidence meeting the similarity threshold ($\ge 0.45$).
+   *Rationale*: Prevents the LLM from generating plausible-sounding but completely invented support policies.
+4. **Conservative Handling of Account & Security Issues**:
+   *Decision*: Sensitive account access queries (passwords, hack reports, locked accounts) are strictly escalated.
+   *Rationale*: AI cannot securely verify identity or reset credentials over public Twitter mentions.
+5. **Conservative Handling of Billing & Refund Actions**:
+   *Decision*: Transactional queries demanding refunds, charge disputes, or payment deductions are strictly escalated.
+   *Rationale*: AI support cannot initiate financial transactions or refund payments without human agent review.
+6. **Unsafe Auto-Handle Treated as Key Failure Metric**:
+   *Decision*: Primary optimization metric is minimizing `unsafe_auto_handle_rate` rather than maximizing overall automation.
+   *Rationale*: Aligns with enterprise customer support SLAs where compliance and security outrank volume throughput.
+7. **Configurable Thresholds vs. Hardcoded Numbers**:
+   *Decision*: All numeric thresholds are encapsulated in `EscalationPolicyConfig`.
+   *Rationale*: Enables clean parameter tuning, A/B testing, and sensitivity analysis without touching core policy logic.
+8. **Deferred Threshold Tuning**:
+   *Decision*: Do not claim empirical optimality for initial thresholds until human review annotations are collected.
+   *Rationale*: Avoids manufacturing statistical claims from small unlabeled samples.
+
+---
+
+### 8. How to Reproduce Phase 4
+
+1. **Run Escalation Policy Evaluation Harness**:
+   ```bash
+   python -m backend.src.escalation.evaluate
+   ```
+   *Generates `evaluation/escalation_review.csv`, outputs policy distribution, and displays the threshold sensitivity grid in < 15 seconds.*
+
+2. **Run Escalation Unit & Integration Tests**:
+   ```bash
+   python -m unittest tests/test_escalation.py
+   ```
+   *Runs 16 tests verifying all 12 policy rules, priority ordering, threshold boundaries, metrics, and end-to-end mocked pipeline execution.*
+
+3. **Run Full Repository Test Suite**:
+   ```bash
+   python -m unittest discover tests
+   ```
+   *Runs all 37 automated tests across Phase 1, Phase 2, Phase 3, and Phase 4 in ~15 seconds.*
+

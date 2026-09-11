@@ -1,0 +1,27 @@
+================================================================================
+ASSISTIQ PHASE 4: HUMAN EVALUATION GUIDELINES FOR AUTO-HANDLE VS ESCALATE
+================================================================================
+The reviewer must evaluate each query and candidate AI response against the question:
+"Would it be safe for an AI support agent to send this response without human review?"
+
+CRITERIA FOR 'auto_handle':
+1. Request is clearly understood and intent is unambiguous.
+2. Historical evidence retrieved is directly relevant and sufficient.
+3. Response is fully grounded in the retrieved evidence (no hallucinated policies).
+4. No account-specific intervention is required (e.g. no manual database changes,
+   password resets, refund issuances, or identity verification).
+5. Response does not make unsupported promises or guarantees.
+
+CRITERIA FOR 'escalate':
+1. Ambiguous, contradictory, or underspecified customer request.
+2. Insufficient or weak historical evidence (similarity < 0.45 or 0 matching cases).
+3. Sensitive account security issues (hacked accounts, password recovery, stolen access).
+4. Financial/transactional actions (duplicate charges, refund requests, payment disputes).
+5. Generation or grounding failure in the LLM layer.
+6. Any situation where sending an autonomous AI reply risks customer harm or brand liability.
+
+COLUMNS TO COMPLETE IN escalation_review.csv:
+- human_decision: "auto_handle" | "escalate"
+- human_risk:     "low" | "medium" | "high"
+- human_notes:    Specific reason or justification for human decision
+================================================================================
