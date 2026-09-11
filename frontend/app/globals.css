@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-ibm-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-ibm-mono), "Courier New", monospace;
+
+  --color-console-bg: #090a0d;
+  --color-console-panel: #111217;
+  --color-console-surface: #171922;
+  --color-console-surface-hover: #1e212d;
+  --color-console-border: #1f222e;
+  --color-console-border-subtle: #2c3040;
+
+  --color-console-text: #eae8e3;
+  --color-console-muted: #858a98;
+  --color-console-dim: #555967;
+
+  --color-amber-accent: #f59e0b;
+  --color-amber-light: #fbbf24;
+  --color-amber-dim: #b45309;
+
+  --color-cyan-accent: #00d4c8;
+  --color-cyan-light: #22d3ee;
+  --color-cyan-dim: #0f766e;
+
+  --color-paper-bg: #f4efe6;
+  --color-paper-text: #16171a;
+  --color-paper-muted: #5a5d6a;
+  --color-paper-border: #ded8cb;
+}
+
+:root {
+  --background: #090a0d;
+  --foreground: #eae8e3;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Support Console Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0d0e13;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #252834;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #353a4b;
+}
+
+/* Evidence Card Warm Paper Styling */
+.evidence-paper-card {
+  background-color: #f4efe6;
+  color: #16171a;
+  box-shadow: 2px 3px 0px rgba(0, 0, 0, 0.45);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.evidence-paper-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 3px 4px 0px rgba(0, 0, 0, 0.55);
+}
+
+/* Decision Stamp Visuals */
+.stamp-auto-handle {
+  border: 2px solid #00d4c8;
+  color: #00d4c8;
+  background-color: rgba(0, 212, 200, 0.06);
+  box-shadow: 0 0 16px rgba(0, 212, 200, 0.18);
+  transform: rotate(-1.5deg);
+}
+
+.stamp-escalate {
+  border: 2px solid #f59e0b;
+  color: #f59e0b;
+  background-color: rgba(245, 158, 11, 0.08);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.22);
+  transform: rotate(1.5deg);
+}
+
+.stamp-high-risk {
+  border-color: #ef4444;
+  color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.1);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.25);
+}
+
+/* Subtle Pulsing & Scanning Animations */
+@keyframes terminal-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.animate-cursor-blink {
+  animation: terminal-blink 1s infinite;
+}
+
+@keyframes subtle-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+.animate-subtle-pulse {
+  animation: subtle-pulse 2s ease-in-out infinite;
+}
+
+/* Reduced Motion Compliance */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

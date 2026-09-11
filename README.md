@@ -923,3 +923,105 @@ ASSISTIQ_LLM_PROVIDER=gemini
    ```
    *Runs all 48 tests across Phases 1, 2, 3, 4, and 5 in ~14 seconds.*
 
+---
+
+## Phase 6 — Next.js Frontend
+
+The AssistIQ frontend is an internal customer-support operations console built with **Next.js 16 (App Router)**, **React 19**, **TypeScript**, and **Tailwind CSS v4**. It acts as a client/presentation layer consuming the FastAPI REST API, making the AI system's intent classification, vector evidence retrieval, grounded LLM generation, and deterministic escalation policies visible.
+
+### 1. Architecture Flow
+
+```
+Customer Message (Input)
+       ↓
+Next.js Frontend (React 19 / TypeScript / Tailwind CSS v4 / Three.js)
+       ↓  POST /api/v1/assist
+FastAPI Backend (localhost:8000)
+       ↓
+Phase 1 — Intent Classification (LinearSVC)
+       ↓
+Phase 2 — Historical Support Retrieval (FAISS IndexFlatIP on 40,794 cases)
+       ↓
+Phase 3 — Grounded Reply Generation (Google Gemini 2.5 Flash)
+       ↓
+Phase 4 — Deterministic Auto-handle vs Escalate Policy (Rules Engine)
+       ↓
+JSON API Contract (AssistResponse)
+       ↓
+Next.js Support Console UI
+  ├── Left Sidebar (Brand, Health status, Real-time session metrics)
+  ├── Embedding Space Hero (Three.js WebGL particle space, FAISS 40,794 cluster simulation, Latency telemetry)
+  ├── Conversation Thread (Multi-turn inquiries, Grounded replies, Evidence citations, Copy actions)
+  ├── Composer (Fast input, Keyboard submit, Multi-stage pipeline progress banner)
+  └── Right Evidence & Inspection Panel (Intent badge, Animated confidence meter, AUTO-HANDLED vs ESCALATE stamp, Warm paper evidence cards)
+```
+
+### 2. Technology Stack
+
+- **Framework**: Next.js 16.3.4 (Turbopack, App Router)
+- **UI Library**: React 19.2.8 & React DOM
+- **Language**: TypeScript 5 (Strict mode, zero `any`, typed API contracts matching Pydantic schemas)
+- **Styling**: Tailwind CSS v4 with custom dark support-console design tokens and warm paper aesthetics
+- **Typography**: IBM Plex Sans (general UI) & IBM Plex Mono (technical data, confidence scores, case IDs, rules) via `next/font/google`
+- **WebGL Visualization**: Three.js (client-only particle cloud representing 40,794 support cases, dynamic query pulse, nearest-neighbor link lines)
+- **State Management**: React state hooks (`useState`, `useEffect`, `useCallback`) managing session conversation history and live session metrics without external dependencies
+
+### 3. UI Design Principles
+
+- **Support Console Aesthetic**: High-contrast near-black background (`#090a0d`), dark panel surfaces (`#111217`), warm off-white typography, amber accent (`#f59e0b`), and cyan accent (`#00d4c8`).
+- **3-Column Grid**: 220px Left Sidebar | Flexible Central Workspace | 340px Right AI Inspection Panel.
+- **Explainable AI Reasoning**: Visualizing *why* a decision was made (Intent, Confidence, FAISS evidence, Primary rule, Rationale) rather than a black-box chatbot.
+- **Distinctive Evidence Cards**: Warm paper background (`#f4efe6`), dark ink typography, hard drop shadow, mono case ID (`#SPT-XXXXX`), and cosine similarity badge.
+- **Physical Decision Stamps**: Dynamic `AUTO-HANDLED` (cyan glow) and `ESCALATE` (amber/red glow) stamps reflecting Phase 4 policy output.
+- **Responsive & Accessible**: Mobile tab switcher between Conversation Workspace and AI Inspection, ARIA attributes, semantic markup, and `prefers-reduced-motion` compliance.
+
+### 4. Environment Variables
+
+Create `frontend/.env.local` (or copy from `frontend/.env.example`):
+
+```bash
+# FastAPI Backend URL (Phase 5)
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+```
+
+> [!SECURITY]
+> No Gemini API keys or server credentials are exposed to the browser. All LLM and ML operations remain strictly server-side behind the FastAPI gateway.
+
+### 5. How to Run Locally
+
+#### Terminal 1: Start FastAPI Backend
+```bash
+# From workspace root
+uvicorn backend.api.main:app --host 127.0.0.1 --port 8000
+```
+*The backend starts at `http://127.0.0.1:8000` with Swagger docs at `/docs`.*
+
+#### Terminal 2: Start Next.js Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+*The frontend starts at `http://localhost:3000`.*
+
+### 6. Consumed Endpoints
+
+| Endpoint | Method | Purpose |
+| :--- | :---: | :--- |
+| `/health` | `GET` | Automatic ping checking server liveness; renders live `● API Connected` status badge. |
+| `/api/v1/assist` | `POST` | Sends customer message payload `{ "message": "..." }`, receives complete 4-phase structured `AssistResponse`. |
+
+### 7. Example Demo Workflow
+
+1. Open `http://localhost:3000` in the browser.
+2. Confirm the sidebar status reads `● API Connected (:8000)`.
+3. Click sample prompt: *"I was charged twice for Spotify Premium this month. Can I get a refund?"* and press **Analyze**.
+4. Observe the live loading progress and Three.js particle space mapping the query vector.
+5. Review the result:
+   - **Intent**: `Billing & Payment` (`billing_and_payment`) with animated confidence score.
+   - **Decision Stamp**: `ESCALATE` (Risk: `high`, Primary Rule: `E6`, Rule list: `E6 · E1`).
+   - **Evidence**: Top-K retrieved historical Spotify cases with cosine similarity (`sim 0.8968`).
+   - **Telemetry**: Real stage latencies (Intent, FAISS, Gemini, Policy, Total).
+   - **Session Metrics**: Sidebar updates from `0` to `Analyzed: 1, Escalated: 1`.
+
+
