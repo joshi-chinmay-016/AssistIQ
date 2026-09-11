@@ -5,3 +5,5 @@ dataset/spotify_tweets.csv
 .venv/*
 .antigravity/*
 powershell.cmd
+backend/src/retrieval/artifacts/
+*.faiss

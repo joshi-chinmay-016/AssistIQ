@@ -1,0 +1,17 @@
+metric,value,description
+total_indexed_cases,40794,Total historical customer-support cases indexed
+embedding_model,sentence-transformers/all-MiniLM-L6-v2,Dense semantic embedding model
+embedding_dimensions,384,Dense vector dimensionality
+index_type,faiss.IndexFlatIP,Exhaustive inner product on L2-normalized vectors (exact cosine)
+anti_leakage_overlap,0,Number of golden evaluation tweets in index (0 required)
+intent_consistency_true@1,0.58,Fraction of Top-1 retrieved cases matching true golden intent
+intent_consistency_true@3,0.5683,Mean fraction of Top-3 retrieved cases matching true golden intent
+intent_consistency_true@5,0.573,Mean fraction of Top-5 retrieved cases matching true golden intent
+intent_hit_rate_true@3,0.805,Fraction of queries with >=1 matching intent in Top-3
+manual_review_precision@1,1.0,Top-1 precision (relevant or partially relevant) on manual set
+manual_review_precision@3,1.0,Top-3 precision (relevant or partially relevant) on manual set
+manual_review_strict_precision@1,0.7143,Top-1 strict precision (relevant only) on manual set
+manual_review_strict_precision@3,0.6381,Top-3 strict precision (relevant only) on manual set
+manual_review_hit_rate@3,1.0,Queries with >=1 relevant case in Top-3 on manual set
+avg_retrieval_latency_ms,128.07,Average search latency per query in milliseconds
+p95_retrieval_latency_ms,33.76,95th percentile search latency per query in milliseconds
