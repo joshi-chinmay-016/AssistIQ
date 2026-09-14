@@ -171,7 +171,7 @@ Each decision captures the real engineering context, the alternatives evaluated,
   2. Record/replay HTTP cassettes (VCR.py).
   3. Build fully offline `MockLLMClient` and `MockLLMJudge` implementing the identical interfaces.
 - **Chosen Approach**: Implemented **`MockLLMClient`** and **`MockLLMJudge`** as default offline providers.
-- **Why**: Allows any developer, interviewer, or CI pipeline to run unit tests and the entire evaluation framework within ~15 minutes without providing credit cards or API keys.
+- **Why**: Allows any developer, evaluator, or CI pipeline to run unit tests and the entire evaluation framework within ~15 minutes without providing credit cards or API keys.
 - **Tradeoff**: Mock generation uses heuristic rules and does not evaluate live Gemini fluency.
 - **Evidence / Result**: 48 unit tests and 7 evaluation stages run 100% offline at $0.00 cost. Live evaluation is accessible via a single `--mode live` flag.
 

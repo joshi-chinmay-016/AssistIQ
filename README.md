@@ -206,8 +206,10 @@ Evaluated across 5 dimensions on a 1.0 to 5.0 scale (`evaluation/results/reply_l
 - **Overall Score**: **4.27 / 5.0** (94.0% pass rate)
 
 ### 4. Human vs. LLM Agreement
+The repository contains the human-review workflow and agreement calculation. The current checked-in agreement result is synthetic validation of the statistical harness; actual human-vs-LLM agreement will be reported only after human scoring is completed.
+
 - **Production Status**: `HUMAN_REVIEW_REQUIRED`. Human evaluation columns in `evaluation/reply_review.csv` remain unpopulated awaiting double-blind human labels; we do not fabricate human data.
-- **Synthetic Agreement Validation (`--demo-mock-human`)**: Verified the mathematical implementation of the agreement harness:
+- **Synthetic Agreement Validation (`--demo-mock-human`)**: Validates the mathematical implementation of the agreement harness:
   - Pearson Correlation ($r$): `0.9412`
   - Spearman Rank Correlation ($\rho$): `0.9412`
   - **Quadratic Weighted Cohen's Kappa ($\kappa$)**: **`0.9412`**
@@ -278,22 +280,6 @@ Pipeline errors are automatically diagnosed across 10 failure categories (`evalu
 
 ---
 
-## Next-Week Plan
-
-### P0 — Safety & Correctness
-- **Platt Scaling / Isotonic Calibration**: Fit a sigmoid calibrator (`CalibratedClassifierCV`) to convert LinearSVC decision margins into true posterior probabilities.
-- **Mandatory Clarification Gate**: Require the model to prompt for device/OS before suggesting platform-specific remedies for `playback_and_app_issues`.
-
-### P1 — Quality
-- **Cross-Encoder Reranker**: Integrate `cross-encoder/ms-marco-MiniLM-L-6-v2` to rerank Top-10 FAISS candidates down to Top-3, targeting Strict Precision@3 lift from 63.8% to $> 80\%$.
-- **Dense + Sparse Hybrid Retrieval**: Combine FAISS dense embeddings with BM25 keyword matching via Reciprocal Rank Fusion (RRF) to resolve alphanumeric error codes (e.g. "Error 104").
-- **Intent-Filtered Retrieval**: Partition the FAISS search space by predicted intent to eliminate cross-domain lexical matches.
-
-### P2 — Scale & Observability
-- **Expanded Golden Set**: Expand evaluation set from 200 to 500 examples using active learning uncertainty sampling with multi-annotator agreement.
-- **In-Browser Review Dashboard**: Add a review UI in Next.js to allow support leads to score replies and record human reviews directly.
-
----
 
 ## Project Structure
 
@@ -301,8 +287,8 @@ Pipeline errors are automatically diagnosed across 10 failure categories (`evalu
 AssistIQ/
 ├── backend/
 │   ├── api/
-│   │   ├── main.py              # FastAPI application & CORS setup
-│   │   ├── routes.py            # /api/v1/assist endpoint
+│   │   ├── main.py              # FastAPI application, CORS setup & /api/v1/assist endpoint
+│   │   ├── dependencies.py      # Runtime configuration & pipeline runner provider
 │   │   └── schemas.py           # Request / response Pydantic models
 │   └── src/
 │       ├── intent/              # Phase 1: Classifier, baselines, taxonomy
@@ -456,16 +442,3 @@ All evaluation results were measured on commodity hardware (Windows 11, AMD/Inte
 
 ---
 
-## Interview Notes & Key Design Defenses
-
-### 1. Why LinearSVC instead of fine-tuning BERT / RoBERTa?
-On short customer tweets with a 150-example training set, deep transformers easily overfit, require GPU resources, and add ~50–100ms latency. LinearSVC finds the maximum geometric margin in high-dimensional sparse n-gram space, running in < 2ms on CPU and outperforming Logistic Regression by **+9.0 percentage points in Macro F1** (0.4004 vs 0.3101).
-
-### 2. Why deterministic escalation rules instead of letting Gemini decide?
-In enterprise customer service, escalation decisions must be compliant, predictable, and fully auditable. Delegating escalation to an LLM exposes the workflow to prompt injections, non-deterministic drift, and hallucinated policy commitments. An auditable Python rule engine guarantees zero bypasses of sensitive account security or refund escalation.
-
-### 3. Why FAISS IndexFlatIP instead of HNSW or IVF?
-With 40,794 384-dimensional vectors, exact inner product search (`IndexFlatIP`) takes ~25ms on CPU with a 62MB memory footprint. Approximate nearest neighbors (HNSW/IVF) introduce recall degradation and indexing hyperparameters with negligible latency benefit at this corpus size.
-
-### 4. What does the "88.5% Hit Rate@5" headline number actually mean?
-It is a broad intent-matching recall metric, not a measure of solution correctness. Manual audit shows that **Strict Precision@3 is only 63.8%**—a 24.7 percentage point drop—highlighting the necessity of strict retrieval similarity thresholds ($\ge 0.45$) to prevent ungrounded auto-handling.

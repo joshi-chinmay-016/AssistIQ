@@ -13,7 +13,7 @@ Extracts and categorizes pipeline failures across 10 distinct failure buckets:
 10. ambiguous_customer_message
 
 Generates evaluation/results/failure_examples.csv with rich diagnostic context
-to demonstrate deep system transparency and failure awareness for the interview.
+to demonstrate deep system transparency and failure awareness.
 """
 
 import os

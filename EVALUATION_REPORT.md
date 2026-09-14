@@ -181,6 +181,8 @@ Reply quality was evaluated across five structured dimensions on a 1.0 to 5.0 sc
 
 ## 8. Human vs. LLM Judge Agreement
 
+The repository contains the human-review workflow and agreement calculation. The current checked-in agreement result is synthetic validation of the statistical harness; actual human-vs-LLM agreement will be reported only after human scoring is completed.
+
 ### Transparent Status: `HUMAN_REVIEW_REQUIRED`
 To maintain complete integrity, **AssistIQ does not fabricate human review scores**. In `evaluation/reply_review.csv`, human evaluation columns remain unpopulated by default awaiting double-blind human annotations. Consequently, `evaluation/results/human_llm_agreement.csv` accurately reports `status: "HUMAN_REVIEW_REQUIRED"`.
 
