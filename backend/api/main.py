@@ -3,9 +3,18 @@ AssistIQ: FastAPI Application Server
 Provides HTTP endpoints for health checks and customer support assistance (Phases 1-5).
 """
 
+import os
+import sys
 import logging
 from datetime import datetime, timezone
 from typing import Dict, Any, Callable
+
+# Ensure repository root is in sys.path so 'from backend...' works
+# even when executed from within the backend directory.
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
 from fastapi import FastAPI, Depends, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
