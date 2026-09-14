@@ -15,9 +15,9 @@ top1_similarity_median,0.7025,Median cosine similarity of Top-1 retrieved case
 top1_similarity_min,0.4024,Minimum Top-1 cosine similarity across evaluation set
 top1_similarity_max,1.0,Maximum Top-1 cosine similarity across evaluation set
 top1_similarity_std,0.1406,Standard deviation of Top-1 cosine similarity
-mean_retrieval_latency_ms,53.51,Mean FAISS search latency per query in ms
-median_retrieval_latency_ms,41.13,Median FAISS search latency per query in ms
-p95_retrieval_latency_ms,115.47,95th percentile FAISS search latency per query in ms
+mean_retrieval_latency_ms,20.28,Mean FAISS search latency per query in ms
+median_retrieval_latency_ms,20.04,Median FAISS search latency per query in ms
+p95_retrieval_latency_ms,22.19,95th percentile FAISS search latency per query in ms
 manual_review_strict_precision@1,0.7143,Top-1 strict precision (directly relevant solution) on 35-query human review set
 manual_review_strict_precision@3,0.6381,Top-3 strict precision (directly relevant solution) on 35-query human review set
 manual_review_lenient_precision@1,1.0,Top-1 lenient precision (relevant or partially relevant) on human review set

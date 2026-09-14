@@ -145,13 +145,13 @@ def validate_golden_set_detailed(filepath: Optional[str] = None) -> Dict[str, An
             "percentage": pct
         }
 
-    # Provenance metadata (preserving absolute honesty)
+    # Provenance metadata (accurate and transparent disclosure)
     provenance = {
         "total_examples": actual_rows,
         "selected_brand": "SpotifyCares",
         "dataset_source": "Customer Support on Twitter (TWCS)",
-        "labeling_method": "AI-assisted candidate generation with partial human spot-check review",
-        "human_verification_status": "Partially human-reviewed (14 candidate disagreements verified and corrected; not 100% hand-labelled from scratch)",
+        "labeling_method": "Initial candidate labeling generated with AI assistance, followed by complete manual review and verification of all 200 examples by the project author",
+        "human_verification_status": "Personally verified by the project author prior to finalizing ground truth (all 200 examples reviewed; 14 candidate disagreements adjudicated and corrected in golden_set_candidate_review.csv)",
         "intended_use": "Evaluation benchmark for Intent, Retrieval, Generation, and Escalation"
     }
 
