@@ -1,0 +1,108 @@
+{
+  "status": "PASSED",
+  "dataset_path": "dataset\\golden_set.csv",
+  "total_issues": 0,
+  "issues": [],
+  "checks": {
+    "required_columns": {
+      "passed": true,
+      "required": [
+        "tweet_id",
+        "text",
+        "intent"
+      ],
+      "found": [
+        "tweet_id",
+        "text",
+        "intent",
+        "notes"
+      ],
+      "missing": []
+    },
+    "row_count": {
+      "passed": true,
+      "expected": 200,
+      "actual": 200
+    },
+    "empty_text": {
+      "passed": true,
+      "empty_count": 0,
+      "empty_tweet_ids": []
+    },
+    "empty_intent": {
+      "passed": true,
+      "empty_count": 0,
+      "empty_tweet_ids": []
+    },
+    "taxonomy_membership": {
+      "passed": true,
+      "taxonomy_classes": 11,
+      "classes_represented": 11,
+      "invalid_classes": []
+    },
+    "duplicate_tweet_ids": {
+      "passed": true,
+      "duplicate_count": 0,
+      "duplicate_ids": []
+    },
+    "duplicate_texts": {
+      "passed": true,
+      "duplicate_count": 0,
+      "duplicate_sample_ids": []
+    }
+  },
+  "class_distribution": {
+    "playback_and_app_issues": {
+      "count": 31,
+      "percentage": 15.5
+    },
+    "search_and_discovery": {
+      "count": 3,
+      "percentage": 1.5
+    },
+    "account_and_login": {
+      "count": 15,
+      "percentage": 7.5
+    },
+    "billing_and_payment": {
+      "count": 19,
+      "percentage": 9.5
+    },
+    "premium_and_subscription": {
+      "count": 22,
+      "percentage": 11.0
+    },
+    "music_availability": {
+      "count": 12,
+      "percentage": 6.0
+    },
+    "playlist_and_library": {
+      "count": 11,
+      "percentage": 5.5
+    },
+    "feature_requests": {
+      "count": 24,
+      "percentage": 12.0
+    },
+    "content_metadata": {
+      "count": 8,
+      "percentage": 4.0
+    },
+    "ads_and_privacy": {
+      "count": 2,
+      "percentage": 1.0
+    },
+    "other_non_actionable": {
+      "count": 53,
+      "percentage": 26.5
+    }
+  },
+  "provenance": {
+    "total_examples": 200,
+    "selected_brand": "SpotifyCares",
+    "dataset_source": "Customer Support on Twitter (TWCS)",
+    "labeling_method": "AI-assisted candidate generation with partial human spot-check review",
+    "human_verification_status": "Partially human-reviewed (14 candidate disagreements verified and corrected; not 100% hand-labelled from scratch)",
+    "intended_use": "Evaluation benchmark for Intent, Retrieval, Generation, and Escalation"
+  }
+}

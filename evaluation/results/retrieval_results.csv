@@ -1,17 +1,25 @@
 metric,value,description
-total_indexed_cases,40794,Total historical customer-support cases indexed
-embedding_model,sentence-transformers/all-MiniLM-L6-v2,Dense semantic embedding model
-embedding_dimensions,384,Dense vector dimensionality
+total_indexed_cases,40794,Total historical Spotify support cases indexed in FAISS
+embedding_model,sentence-transformers/all-MiniLM-L6-v2,384-dimensional dense semantic embedding model
 index_type,faiss.IndexFlatIP,Exhaustive inner product on L2-normalized vectors (exact cosine)
-anti_leakage_overlap,0,Number of golden evaluation tweets in index (0 required)
-intent_consistency_true@1,0.58,Fraction of Top-1 retrieved cases matching true golden intent
-intent_consistency_true@3,0.5683,Mean fraction of Top-3 retrieved cases matching true golden intent
-intent_consistency_true@5,0.573,Mean fraction of Top-5 retrieved cases matching true golden intent
-intent_hit_rate_true@3,0.805,Fraction of queries with >=1 matching intent in Top-3
-manual_review_precision@1,1.0,Top-1 precision (relevant or partially relevant) on manual set
-manual_review_precision@3,1.0,Top-3 precision (relevant or partially relevant) on manual set
-manual_review_strict_precision@1,0.7143,Top-1 strict precision (relevant only) on manual set
-manual_review_strict_precision@3,0.6381,Top-3 strict precision (relevant only) on manual set
-manual_review_hit_rate@3,1.0,Queries with >=1 relevant case in Top-3 on manual set
-avg_retrieval_latency_ms,128.07,Average search latency per query in milliseconds
-p95_retrieval_latency_ms,33.76,95th percentile search latency per query in milliseconds
+anti_leakage_overlap,0,Overlap between golden test queries and index (0 required)
+evaluated_queries,30,Number of golden evaluation queries evaluated
+intent_hit_rate@1,0.5667,Fraction of queries with matching intent at rank 1
+intent_hit_rate@3,0.8,Fraction of queries with >=1 matching intent in Top-3
+intent_hit_rate@5,0.9,Fraction of queries with >=1 matching intent in Top-5 (Headline metric)
+intent_consistency@1,0.5667,Fraction of Top-1 retrieved cases matching query golden intent
+intent_consistency@3,0.5444,Mean fraction of Top-3 retrieved cases matching query golden intent
+intent_consistency@5,0.5667,Mean fraction of Top-5 retrieved cases matching query golden intent
+top1_similarity_mean,0.7273,Mean cosine similarity of Top-1 retrieved case
+top1_similarity_median,0.7025,Median cosine similarity of Top-1 retrieved case
+top1_similarity_min,0.4024,Minimum Top-1 cosine similarity across evaluation set
+top1_similarity_max,1.0,Maximum Top-1 cosine similarity across evaluation set
+top1_similarity_std,0.1406,Standard deviation of Top-1 cosine similarity
+mean_retrieval_latency_ms,53.51,Mean FAISS search latency per query in ms
+median_retrieval_latency_ms,41.13,Median FAISS search latency per query in ms
+p95_retrieval_latency_ms,115.47,95th percentile FAISS search latency per query in ms
+manual_review_strict_precision@1,0.7143,Top-1 strict precision (directly relevant solution) on 35-query human review set
+manual_review_strict_precision@3,0.6381,Top-3 strict precision (directly relevant solution) on 35-query human review set
+manual_review_lenient_precision@1,1.0,Top-1 lenient precision (relevant or partially relevant) on human review set
+manual_review_lenient_precision@3,1.0,Top-3 lenient precision (relevant or partially relevant) on human review set
+manual_review_hit_rate@3,0.7143,Fraction of queries with >=1 relevant case in Top-3 on human review set

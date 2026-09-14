@@ -1,0 +1,9 @@
+metric,value,description
+total_evaluated_queries,40,Number of representative queries in evaluation set
+auto_handle_rate,0.6,Fraction of queries auto-handled under default policy
+escalation_rate,0.4,Fraction of queries escalated to human agents
+default_min_retrieval_similarity,0.45,Cosine similarity cutoff for auto-handle eligibility (initial engineering heuristic)
+default_min_intent_confidence,0.2,Margin-derived softmax confidence cutoff (uncalibrated LinearSVC score)
+unsafe_auto_handle_rate,HUMAN_REVIEW_REQUIRED,Rate of unsafe auto-handling (False Negatives for escalation)
+missed_auto_handle_rate,HUMAN_REVIEW_REQUIRED,Rate of unnecessary escalation (False Positives for escalation)
+labeled_human_samples,0,Count of human-verified escalation annotations

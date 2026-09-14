@@ -1,0 +1,4 @@
+model,accuracy,macro_precision,macro_recall,macro_f1,weighted_precision,weighted_recall,weighted_f1
+majority_baseline,0.26,0.026,0.1,0.0413,0.0676,0.26,0.1073
+tfidf_logistic_regression,0.44,0.3024,0.3276,0.3101,0.4076,0.44,0.4187
+proposed_model,0.46,0.4241,0.3942,0.4004,0.4658,0.46,0.4534

@@ -1,0 +1,12 @@
+,playback_and_app_issues,search_and_discovery,account_and_login,billing_and_payment,premium_and_subscription,music_availability,playlist_and_library,feature_requests,content_metadata,ads_and_privacy,other_non_actionable
+playback_and_app_issues,2,0,0,1,2,1,0,1,0,0,1
+search_and_discovery,1,0,0,0,0,0,0,0,0,0,0
+account_and_login,0,0,2,0,0,0,1,0,0,0,1
+billing_and_payment,1,0,0,2,0,0,0,0,0,0,2
+premium_and_subscription,0,0,1,0,3,0,0,0,0,0,1
+music_availability,1,0,0,0,0,1,0,0,0,0,1
+playlist_and_library,1,0,0,0,0,0,1,1,0,0,0
+feature_requests,0,0,1,0,1,0,0,2,1,0,1
+content_metadata,0,1,0,0,0,0,0,0,1,0,0
+ads_and_privacy,0,0,0,0,0,0,0,0,0,0,0
+other_non_actionable,2,0,0,0,1,0,1,0,0,0,9

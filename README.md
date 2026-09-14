@@ -57,7 +57,7 @@ To ensure rigorous and honest benchmarking, we implemented three distinct classi
 
 ### 4. Experimental Setup & Evaluation Methodology
 
-- **Golden Evaluation Dataset**: `dataset/golden_set.csv` containing **200 verified examples**.
+- **Golden Evaluation Dataset**: `dataset/golden_set.csv` containing **200 examples** (created via AI-assisted candidate generation with partial human spot-check review; 14 candidate label disagreements were manually inspected and resolved in `golden_set_candidate_review.csv`).
 - **Train/Test Split**:
   - 75% Training ($N=150$) / 25% Test ($N=50$)
   - `random_state=2026`
@@ -922,6 +922,44 @@ ASSISTIQ_LLM_PROVIDER=gemini
    python -m unittest discover tests
    ```
    *Runs all 48 tests across Phases 1, 2, 3, 4, and 5 in ~14 seconds.*
+
+---
+
+## Comprehensive Evaluation Framework
+
+AssistIQ includes a complete, reproducible evaluation suite covering intent classification, FAISS retrieval, LLM reply judging, human agreement, deterministic escalation, threshold sensitivity, and failure categorization.
+
+Full technical writeups:
+- **Comprehensive Evaluation Report**: [EVALUATION_REPORT.md](file:///c:/AssistIQ/EVALUATION_REPORT.md) (< 6 pages report covering all 13 sections)
+- **Engineering Decision Log**: [DECISION_LOG.md](file:///c:/AssistIQ/DECISION_LOG.md) (14 non-obvious engineering decisions)
+
+### 1. Reproducible Evaluation Commands & Expected Runtimes
+
+All evaluation scripts run in **100% offline, zero-cost mock mode** by default. No API key is required.
+
+| Stage | Command | Target | Measured Runtime | Output Artifact |
+| :--- | :--- | :--- | :---: | :--- |
+| **Golden Set Validation** | `python -m evaluation.validate_golden` | Checks duplicates, nulls, 11-intent taxonomy on 200 rows | **~0.1s** | `evaluation/results/golden_set_validation_report.json` |
+| **Intent Evaluation** | `python -m evaluation.evaluate_intent` | Evaluates Majority, TF-IDF+LR, LinearSVC on 50 test rows | **~4s** | `evaluation/results/intent_metrics.csv`<br>`evaluation/results/intent_confusion_matrix.csv`<br>`evaluation/results/intent_errors.csv` |
+| **Retrieval Evaluation** | `python -m evaluation.evaluate_retrieval --limit 30` | Hit Rate@k, Intent consistency@k, latency, similarity stats | **~8s** | `evaluation/results/retrieval_metrics.csv`<br>`evaluation/results/retrieval_errors.csv` |
+| **LLM Judge Quality** | `python -m evaluation.llm_judge --limit 30 --mode mock` | Scores 5 dimensions (1-5), checks hallucinations, pass/fail | **~6s** | `evaluation/results/reply_llm_judge.csv` |
+| **Human Agreement** | `python -m evaluation.human_agreement` | Pearson/Spearman, Quadratic Weighted Cohen's Kappa | **~0.1s** | `evaluation/results/human_llm_agreement.csv` |
+| **Escalation Policy** | `python -m evaluation.evaluate_escalation` | Auto-handle rate, safety failure rates, 2D sensitivity grid | **~1s** | `evaluation/results/escalation_metrics.csv`<br>`evaluation/results/threshold_sensitivity.csv` |
+| **Failure Analysis** | `python -m evaluation.failure_analysis` | Extracts examples across 10 structured failure categories | **~0.1s** | `evaluation/results/failure_examples.csv` |
+| **Full Suite Runner** | `python -m evaluation.run --stage all --mode mock --limit 30` | Runs all 7 evaluation stages sequentially | **~18s** | Generates all 11 evaluation artifacts |
+
+*To run live Gemini LLM generation and judging, pass `--mode live` (requires `GEMINI_API_KEY` in `backend/.env`).*
+
+### 2. The Misleading Headline Number
+
+> **Observed Metric: "88.5% Retrieval Intent Hit Rate@5"**
+
+- **Why it sounds impressive**: 88.5% suggests that semantic retrieval successfully finds relevant help cases for almost 9 out of 10 incoming customer tweets.
+- **Why it is misleading without context**:
+  1. *Surrogate Heuristic, Not True Semantic Relevance*: Hit Rate@5 only checks whether at least one case in the top 5 was assigned the same predicted intent label as the query.
+  2. *Topical Overlap != Correct Solution*: A query about an iPhone playback pause and a query about a Windows 10 desktop crash both fall under `playback_and_app_issues`. A match is recorded as a "Hit", but the iPhone troubleshooting steps in the retrieved case cannot fix the Windows desktop crash.
+  3. *Empirical Ground Truth*: In manual human review of 35 queries (105 cases), **Strict Precision@3 was only 63.81%**. Over 36% of retrieved cases in the top 3 were not direct solutions.
+  4. *Takeaway*: True retrieval utility must be validated through strict answer groundedness and human review rather than surrogate hit rates.
 
 ---
 
